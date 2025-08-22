@@ -1,43 +1,42 @@
-version: "3.9"
 services:
   postgres:
     image: postgres:16-alpine
     container_name: finexdb
     env_file: .env.postgres
     ports:
-      "5433:5432"
-volumes:
-  pgdata:/var/lib/postgresql/data
-healthcheck:
-  test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-  interval: 5s
-  timeout: 3s
-  retries: 10
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   admin-service:
-   build: ./admin-service
-   container_name: admin
-   env_file: ./admin-service/.env
-   depends_one: 
-    postgres:
-    condition: service_healthy
+    build: ./admin-service
+    container_name: admin
+    env_file: ./admin-service/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
-     "8080:8083"
-    command: sh -c "npx prisma migrate deploy && node dist/server.js" 
-  
-  user-service:
-  build: ./user-service
-  container_name: user
-  env_file: ./user-service/.env
-  depends_one:
-   postgres:
-   condition: service_healthy
-   ports:
-    "8081:8082"
-  command: sh -c "npx prisma migrate deploy && node dist/server.js"
+      - "8080:8080"
+    command: sh -c "npx prisma migrate deploy && node dist/server.js"
 
-  volumes:
-    pgdata:
+  user-service:
+    build: ./user-service
+    container_name: user
+    env_file: ./user-service/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    command: sh -c "npx prisma migrate deploy && node dist/server.js"
+
+volumes:
+  pgdata:
 
 
      
